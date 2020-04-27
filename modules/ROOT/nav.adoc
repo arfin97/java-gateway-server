@@ -1,4 +1,4 @@
-.Discovery Server
+.Gateway Server
 * xref:index.adoc[What is it?]
 * xref:config-doc.adoc[Configuration]
 ** xref:code.adoc[Code]
