@@ -1,0 +1,34 @@
+= CODES
+
+== Routes
+.GatewayConfiguration.java
+[source, java]
+----
+include::CODE:example$gateway-server/src/main/java/com/moviedatabase/discoveryserver/GatewayConfiguration.java[]
+----
+
+== Main
+.GatewayServerApplication.java
+[source, java]
+----
+include::CODE:example$gateway-server/src/main/java/com/moviedatabase/discoveryserver/GatewayServerApplication.java[]
+----
+
+== Properties:
+.application.properties
+[source, properties]
+----
+include::CODE:example$gateway-server/src/main/resources/application.properties[]
+----
+
+== Dependencies
+.pom.xml
+[source, xml]
+----
+include::CODE:example$gateway-server/pom.xml[]
+----
+
+
+
+
+

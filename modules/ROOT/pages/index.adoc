@@ -1,0 +1,8 @@
+= Gateway Server!
+
+== Why Do We Need This?
+
+A gateway is a hardware device that acts as a "gate" between two networks. It may be a router, firewall, server, or other device that enables traffic to flow in and out of the network. While a gateway protects the nodes within network, it also a node itself.
+
+One of the objectives of microservices is to enable the development teams to deploy and scale their applications independently. As more services and instances are added to the system, service locations start to change frequently: partly because of manual or automatic scaling, partly because of continuous delivery processes. Instances will start to go up and down frequently as scaling and deployment happen. Clearly, a static configuration of the location of services is not a viable solution. A dynamic configuration is needed.
+

@@ -1,0 +1,7 @@
+= Read Me
+
+[NOTE]
+Codes are inside modules/CODE/
+
+[NOTE]
+Configurations are inside modules/ROOT/pages/config-doc
