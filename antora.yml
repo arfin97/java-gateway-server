@@ -1,5 +1,5 @@
-name: discovery-server
-title: Discovery Server
+name: gateway-server
+title: Gateway Server
 version: dev
 nav:
 - modules/ROOT/nav.adoc
