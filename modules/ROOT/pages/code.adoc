@@ -4,14 +4,14 @@
 .GatewayConfiguration.java
 [source, java]
 ----
-include::CODE:example$gateway-server/src/main/java/com/moviedatabase/discoveryserver/GatewayConfiguration.java[]
+include::CODE:example$gateway-server/src/main/java/com/moviedatabase/gatewayserver/GatewayConfiguration.java[]
 ----
 
 == Main
 .GatewayServerApplication.java
 [source, java]
 ----
-include::CODE:example$gateway-server/src/main/java/com/moviedatabase/discoveryserver/GatewayServerApplication.java[]
+include::CODE:example$gateway-server/src/main/java/com/moviedatabase/gatewayserver/GatewayServerApplication.java[]
 ----
 
 == Properties:
