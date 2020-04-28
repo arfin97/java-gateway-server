@@ -3,8 +3,12 @@ spring:
     gateway:
       routes:
         - id: path_route
-          uri: https://example.org
+          uri: lb://movie-service
           predicates:
-            - Path=/red/{segment},/blue/{segment}
+            - Path=/foo
+          filters:
+#            - PrefixPath=/movie
+            - AddResponseHeader=X-Response-Red, Blue
+            - RewritePath=/foo, /movie
 
 #https://www.baeldung.com/spring-cloud-gateway
