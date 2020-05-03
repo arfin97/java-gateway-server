@@ -1,0 +1,253 @@
+:toc:
+:sectnums:
+:toclevels: 5
+:sectnumlevels: 5
+
+= Spring Cloud Gateway Server
+
+== Gatway Server
+
+Spring Cloud Gateway is built on Spring Boot 2.x, Spring WebFlux, and Project Reactor. As a consequence, many of the familiar synchronous libraries (Spring Data and Spring Security, for example) and patterns you know may not apply when you use Spring Cloud Gateway. If you are unfamiliar with these projects, we suggest you begin by reading their documentation to familiarize yourself with some of the new concepts before working with Spring Cloud Gateway.
+
+== Role of Gateway Server
+* Routing
+* Security
+* Monitoring
+* Canarying
+* Monolith Strangling
+* Resilience
+
+With out API Gateway: Jumbled communication.
+
+image::without-api-gateway.png[]
+
+With API Gateway: Organized Routing.
+
+image::with-api-gateway.png[]
+
+== Components of Gatway Server
+image::gateway flow[]
+* Predicate
+* Filters
+** Pre-Filter
+** Global-Filter
+** Post-Filter
+
+
+== How It Works?
+```
+Client >
+> Mapping Handler >
+> Web Handler [ Pre Filter, Proxy Filter ] >
+> Proxied Service >
+> Web Handler [ Post Filter] >
+> Mapping Handler >
+> Client
+```
+image::how-it-works.png[]
+
+
+== Blocking and Non Blocking (How is it different from netflix Zuul?)
+https://stackoverflow.com/questions/47092048/how-is-spring-cloud-gateway-different-from-zuul[How is Spring Cloud Gateway different from Zuul?]
+
+- Other solutions uses Blocking Architecture
+- Spring Cloud Gateway is Non-Blocking
+
+image::non-blocking[]
+
+== Configuring Gatway Server
+We are using java based configuration as example.
+
+. Start a spring boot project with
+- Spring Cloud Gateway
+- Eureka Client
+. Configure the gateway server as an Eureka Client like the previous ones.
+. Make a Java class with `@Configuration` annotation for gateway configurations. Name it anything you want.
+. Create a `@Bean` method that returns `RouteLocator`, Parameter is builder with type `RouteLocatorbuilder`. This RouteLocator will map your services URIs.
+. Create routes by `builder.route().route(r -> )`
+. Inside `route()` we need to add 3 parameters.
+- `r.path():` Antmatcher of the URL
+- `.uri():` Actual Service URL or In case of EUREKA instance, lb://name-of-service - Here lb means load balance.
+- `id():` A identifier of the route.
+. Add `.build()` at the end to end making routes and the gateway.
+
+== Java based configuration example
+.GatewayConfiguration.java
+[source, java]
+public class GatewayConfiguration {
+   @Bean
+   public RouteLocator getRoutes(RouteLocatorBuilder builder){
+       return builder.routes().route(
+               r-> r.path("/movie/**").uri("lb://movie-service").id("movieService")
+       ).build();
+   }
+}
++
+[NOTE]
+You can also configure gateway using properties file.
+Spring Cloud Gateway is different from Netflix Zuul Gateway, it uses no-blocking architecture which uses less resources. Because it queues messages.
+
+== YML based route configuration example
+.application.properties
+[source, yml]
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: path_route
+          uri: lb://movie-service
+          predicates:
+            - Path=/foo
+          filters:
+            - AddResponseHeader=X-Response-Red, Blue
+            - RewritePath=/foo, /movie
+
+
+== How to use gateway to dynamically route requests to services
+* Add discovery client depedencies
+* Add the discovery locator configurations in props file.
+
+[source, properties]
+server.port=8080
+spring.application.name=gateway-server
+spring.cloud.gateway.enabled=true
+
+[source, properties]
+spring.cloud.loadbalancer.ribbon.enabled=true
+spring.cloud.gateway.discovery.locator.enabled=true
+spring.cloud.gateway.discovery.locator.lowerCaseServiceId=true
+spring.cloud.gateway.discovery.locator.lower-case-service-id=true
+eureka.client.serviceUrl.defaultZone=http://localhost:8761/eureka, http://localhost2:8762/eureka
+
+
+
+
+== Different parts of the route
+- a destination URI
+- a collection of predicates
+- a collection of filters
+- ID
+
+== Predicates
+* Before, After, Between
+* Cookie Route
+* Header Route
+* Host Route
+* Method GET, POST Route
+* Path Route
+* Query Route
+* RemoteAddr(IP) Route
+
+== Filters
+Route filters allow the modification of the incoming HTTP request or outgoing HTTP response in some manner.
+
+* AddRequestHeader: AddRequestHeader=X-Request-red, blue
+This listing adds X-Request-red:blue header to the downstream request’s headers for all matching requests. It can also add path variable of predicate to request header.  AddRequestHeader=X-Request-Red, Blue-{segment}
+
+* AddRequestParameter: - AddRequestParameter=red, blue. This will add red=blue to the downstream request’s query string for all matching requests.  It can also add a path variable of predicate to request header.
+
+* AddResponseHeader: AddResponseHeader=X-Response-Red, Blue, This adds X-Response-Foo:Bar header to the downstream response’s headers for all matching requests. AddResponseHeader is aware of URI variables used to match a path or host. URI variables may be used in the value and are expanded at runtime. - AddResponseHeader=foo, bar-{segment}
+
+* DedupeResponseHeader: -DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin This removes duplicate values of Access-Control-Allow-Credentials and Access-Control-Allow-Origin response headers in cases when both the gateway CORS logic and the downstream logic add them.
+
+* Hystrix GatewayFilter: - Hystrix=myCommandName This wraps the remaining filters in a HystrixCommand with a command name of myCommandName.
+args:
+name: fallbackcmd
+fallbackUri: forward:/incaseoffailureusethis
+- RewritePath=/consumingserviceendpoint, /backingserviceendpoint
+
+* Spring Cloud CircuitBreaker GatewayFilter
+
+* FallbackHeaders: The FallbackHeaders factory lets you add Hystrix or Spring Cloud CircuitBreaker execution exception details in the headers of a request forwarded to a fallbackUri in an external application
+
+* MapRequestHeader: ক্লায়েন্ট থেকে রিকোয়েস্ট এ নির্দিস্ট প্যারামিটার পেলে সেটা অন্য ধরনের প্যারামিটারে ম্যাপ করে সার্ভারে রাউট করে দেয়।
+
+* PrefixPath: যে পাথ এ রিকোয়েস্ট আসবে সে URI এর  আগে কিছু লাগিয়ে যদি সার্ভারে পাঠাতে চাই তাহলে এটা ইউজ করে যেমন ফিল্টারে /mypath রাখলে /hello আসলে সার্ভারে যাবে /mypath/hello
+
+
+* RequestRateLimiterঃ রিকোয়েস্ট এর লিমিট সেট করে দেয়, যদি ক্রস করে তাহলে ৪২৯-টু মেনি রিকোয়েস্ট রিটার্ন করে।
+একটা অপশনাল আর্গুমেন্ট KeyResolver নেয় যেটা বিন আকারে ডিফাইন করতে হয়। ডিফল্ট ভাবে কি রিসলভার প্রিন্সিপাল থেকে নেইম নেয়ার ট্রাই করে। যদি নেইম না পায় তাইলে রিকোয়েস্ট যেতে দেয় না। এটা ডিফল্ট বিয়েভিয়র। চাইলে প্রপার্টি সেট করে কি রিসোলভার না পেলেও রিকোয়েস্ট যাতে যেতে দেয় এমন সিস্টেম করা যায়।
+
+* Redis RateLimiterঃ এটা ইউজ করে কিছু প্যারামিটিয়ার সেট করে সহজেই রিকোয়েস্ট লিমিট করা যায়, রিকোয়েস্ট টকেন, রিপ্লেনিস রেট, ব্রাস্ট ক্যাপাসিটি ইত্যাদি। নিজের বিন বানায়ে রেট লিমিট সেট করা রেকমেন্ডেট।
+
+* RedirectToঃ status and url, কোন রিকোয়েস্ট রিডায়রেক্ট কোড সহ রিডিরেক্ট করতে চাইলে এটা ইউজ করে ,স্ট্যাটাসে ৩০২ দিয়ে ভ্যালিড ইউয়ারেল দিলে সুন্দর করে সেখানে রিডিরেক্ট করে দিবে।
+
+* RemoveRequestHeaderঃ এই ফিল্টারে একটা প্যরামিটার দিতে হয়। এই প্যরামিটিয়ার সে হেডারে পেলে রিমুভ করে দেয়।
+
+* RemoveResponseHeaderঃ এই ফিল্টারে প্যরামিটার দিলে রেস্পন্স যাওয়ার সময় সেটা পেলে রিমুভ করে দেয়। সব রাউটুএ এপ্লাই করার লাগলে spring.cloud.gateway.default-filters and have it applied to all routes. ইউজ করেত পারি।
+
+* RemoveRequestParameterঃ যদি এই কুইরি প্যারামিটার পায় তাইলে ধরে বের করে দিবে।
+
+* RewritePathঃ রেগুলার এক্সপ্রেশনের মাধ্যোমে একটা পাথ আসলে সেটাকে অন্য একটা পাথে কনভার্ট করে দিতে পারে এইটা। এটা আবার প্যারামিটারও নিতে পারে।
+RewritePath=/red(?<segment>/?.*), $\{segment}
+For a request path of /red/blue, this sets the path to /blue before making the downstream request. Note that the $ should be replaced with $\ because of the YAML specification.
+
+* RewriteLocationResponseHeaderঃ বুঝি নাই
+
+* RewriteResponseHeaderঃ রেগুলার এক্সপ্রেশন ইউজ করে হেডার ভ্যালু ধরে ঐটারে আবার চেঞ্জ করে দেয়া। RewriteResponseHeader=X-Response-Red, , password=[^&]+, password=*** For a header value of /42?user=ford&password=omg!what&flag=true, it is set to /42?user=ford&password=***&flag=true after making the downstream request. You must use $\ to mean $ because of the YAML specification.
+
+* SaveSessionঃ If you integrate Spring Security with Spring Session and want to ensure security details have been forwarded to the remote process, this is critical. সেশন যদি সেইভ করে ফরওয়ার্ডে যেতে চাই। মাঝে মধ্যে লেইজি ফেইজি দেয়া থাকার কারনে সেশন সেইভ করে না।
+
+* SecureHeadersঃ অনেক হেডার এড করে রিকোয়েস্ট সিকিউয়র করা জন্য। এই ব্লগ পোস্টটা পরলে অনেক কিছু ক্লিয়ার হয়ে যাবঃ https://blog.appcanary.com/2017/http-security-headers.html
+
+* SetPathঃ ঐতো পাথ একটা সলে সেটাকে আরেকটাতে চেঞ্জ করে দেয়। প্যরামিটারও সাপোর
+
+* SetRequestHeaderঃ This GatewayFilter replaces (rather than adding) all headers with the given name এটাও হেডার ম্যানপুলেশনের কাজে লাগে।
+
+* SetResponseHeaderঃ সেম কাজ করে রেস্পন্সের জন্য।
+
+* SetStatusঃ HTTP স্ট্যাটাস চেঞ্জ করতে ইউজ হয়।
+
+* StripPrefixঃ URL এর সামনের প্রিফিক্স কেটে দেয়। ভ্যালু ২ দিলে সামনের ২টা প্রিফিক্স কেটে দিবে।
+
+* Retry ঃ বেশ কয়েকটা প্যরামিটার নেয়, কত গ্লা রিট্রাই করবে, কি কি স্ট্যাটাস কোড রিট্রাই করবে, এক্সেপশন কি কি আসতে পারে হাবিজাবি এটা ব্যবহারের সময় সাবধানে থাকতে হবে।
+
+* RequestSizeঃ রিকোয়েস্টের সাইজ বেশী হয়ে গেলে রিকোয়েস্ট যেতে দিবে না।
+
+* ModifyRequestBodyঃ রিকোয়েস্টের বডি মডিফাই করে পাঠাতে চাইলে এটা ইউজ করা হয়।
+
+* Response Bodyঃ রেস্পন্স চেঞ্জ করে পারলেও করা যায়।
+
+* Default Filtersঃ To add a filter and apply it to all routes, you can use spring.cloud.gateway.default-filters. This property takes a list of filters. The following listing defines a set of default filters:
+
+
+=== Global Filters
+* Global Filtersঃ The GlobalFilter interface has the same signature as GatewayFilter. These are special filters that are conditionally applied to all routes.
+
+== Refreshing the Route Cache
+
+Refreshing the Route Cache
+To clear the routes cache,
+
+* make a POST request to `/actuator/gateway/refresh.` The request returns a 200 without a response body.
+
+
+== CORS Configuration
+See the COROS Configuration
+
+== See all route configurations (Actuator API)
+See all actuator API endpoints.
+
+== Resources
+=== Start
+- https://www.baeldung.com/spring-cloud-gateway[Exploring the New Spring Cloud Gateway] [baeldung]
+
+- https://www.javainuse.com/spring/cloud-gateway-eureka[Spring Cloud Tutorial - Spring Cloud Gateway + Netflix Eureka Example][javainuse]
+
+- https://www.youtube.com/watch?v=RRMO4oNptoQ[Spring Cloud Gateway for Stateless Microservice Authorization]
+
+- https://www.youtube.com/watch?v=jOawuL1Xnwo&t=617s[Living on the Edge with Spring Cloud Gateway]
+
+- https://www.youtube.com/watch?v=6aG0xFpeNFw&t=941s[How to configure SpringCloud Zuul – Routing and Filtering using SpringBoot | Java Techie]
+
+- https://www.youtube.com/watch?v=bRBgVMngHcQ[Spring Cloud Gateway with Hystrix example | Tech Primers]
+
+- https://www.youtube.com/watch?v=iuH_B1FutRo&t=1651s[Reactive Java Microservices with Spring Cloud Gateway]
+
+=== Non-blocking and asynchronous solution
+- https://stackoverflow.com/questions/47092048/how-is-spring-cloud-gateway-different-from-zuul[How is Spring Cloud Gateway different from Zuul?]
+- https://www.youtube.com/watch?v=jOawuL1Xnwo&t=858s[Living on the Edge with Spring Cloud Gateway]
+- https://www.youtube.com/watch?v=PwxUtY74UD8[What is the difference between Asynchronous and Non-blocking?]
+- https://dzone.com/articles/why-non-blocking[Why Non-Blocking?]
+- https://stackoverflow.com/questions/7931537/whats-the-difference-between-asynchronous-non-blocking-event-base-architectu[What's the difference between: Asynchronous, Non-Blocking, Event-Base architectures?]
+-
