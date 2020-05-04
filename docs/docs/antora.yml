@@ -1,0 +1,5 @@
+name: config-server
+title: Configuration Server
+version: dev
+nav:
+- modules/spring-cloud-gateway-server/nav.adoc
