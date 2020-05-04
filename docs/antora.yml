@@ -1,5 +1,5 @@
-name: gateway-server
-title: Gateway Server
+name: spring-cloud-gateway-server
+title: Spring cloud gateway server
 version: dev
 nav:
-- modules/ROOT/nav.adoc
+- modules/spring-cloud-gateway-server/nav.adoc
