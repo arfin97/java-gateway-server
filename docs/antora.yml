@@ -1,5 +1,5 @@
-name: spring-cloud-gateway-server
+name: microservices
 title: Spring cloud gateway server
-version: dev
+version: master
 nav:
 - modules/spring-cloud-gateway-server/nav.adoc
